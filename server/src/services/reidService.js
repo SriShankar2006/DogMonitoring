@@ -39,18 +39,31 @@ export async function findReidCandidates({ latitude, longitude, embedding }) {
     return [];
   }
 
-  const { data, error } = await supabase.rpc('find_reid_candidates', {
-    query_lat: Number(latitude),
-    query_lng: Number(longitude),
-    query_embedding: embedding,
-    radius_meters: RADIUS_METERS
-  });
+  try {
+    const { data, error } = await supabase.rpc('find_reid_candidates', {
+      query_lat: Number(latitude),
+      query_lng: Number(longitude),
+      query_embedding: embedding,
+      radius_meters: RADIUS_METERS
+    });
 
-  if (error) {
-    throw new ApiError(500, `Re-ID lookup failed: ${error.message}`);
+    if (error) {
+      const message = error.message || '';
+      if (/could not find the function|function .* not found|does not exist/i.test(message)) {
+        console.warn('Supabase re-ID RPC is missing; continuing without re-ID candidates to allow uploads to proceed.');
+        return [];
+      }
+      throw new ApiError(500, `Re-ID lookup failed: ${error.message}`);
+    }
+
+    return data || [];
+  } catch (error) {
+    if (error instanceof ApiError && /Re-ID lookup failed:/.test(error.message)) {
+      console.warn(`${error.message} Falling back to no candidate matches.`);
+      return [];
+    }
+    throw error;
   }
-
-  return data || [];
 }
 
 export async function scoreReidCandidates({ latitude, longitude, embedding, imageHash, capturedAt }) {

@@ -3,7 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const IMAGES_ROOT = path.join(__dirname, '..', 'data', 'images');
+const IMAGES_ROOT = path.resolve(__dirname, '..', '..', 'data', 'images');
 
 function resolveBaseUrl() {
   return (
