@@ -1,0 +1,49 @@
+{
+  "name": "stray-dog-monitoring-client",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint src --ext js,jsx"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.11.4",
+    "@emotion/styled": "^11.11.5",
+    "@litertjs/core": "^2.5.3",
+    "@mui/icons-material": "^5.15.20",
+    "@mui/material": "^5.15.20",
+    "@mui/x-charts": "^7.7.0",
+    "@supabase/supabase-js": "^2.44.4",
+    "@tensorflow/tfjs-backend-cpu": "4.9.0",
+    "@tensorflow/tfjs-backend-webgl": "4.9.0",
+    "@tensorflow/tfjs-core": "4.9.0",
+    "axios": "^1.7.2",
+    "date-fns": "^3.6.0",
+    "firebase": "^10.12.3",
+    "leaflet": "^1.9.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-dropzone": "^14.2.3",
+    "react-leaflet": "^4.2.1",
+    "react-router-dom": "^6.24.1",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react": "^7.34.3",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "vite": "^5.3.3"
+  },
+  "overrides": {
+    "@mui/system": "^5.18.0",
+    "@mui/private-theming": "^5.17.1",
+    "@mui/styled-engine": "^5.18.0",
+    "@mui/utils": "^5.17.1"
+  }
+}

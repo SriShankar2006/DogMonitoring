@@ -1,0 +1,15 @@
+{
+  "name": "AI Stray Dog Detection & Monitoring System",
+  "short_name": "Stray Dog AI",
+  "icons": [
+    {
+      "src": "/favicon1.png",
+      "sizes": "any",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#1B5E20",
+  "background_color": "#1B5E20",
+  "display": "standalone",
+  "start_url": "/"
+}
