@@ -130,4 +130,4 @@ Login → Dashboard → Upload Image → AI API
 - Dog details with full sighting/movement timeline
 - Search and filter (by ID, date, location, new/repeat, time range)
 - Statistics dashboard with bar/pie/line charts
-- Dark / light mode, fully responsive (mobile hamburger, desktop sidebar)
+- Dark / light mode, fully responsive (mobile hamburger, desktop sidebar).
