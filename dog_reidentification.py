@@ -216,7 +216,7 @@ def ensure_reference_database(reference_files: List[Path], processor, model, det
         if len(db_by_name) == len(reference_files) and all(
             file_name in db_by_name
             and db_by_name[file_name].get("image_hash") == current_manifest[file_name]
-            and db_by_name[file_name].get("dog_id") == f"DOG_{index:03d}"
+            and db_by_name[file_name].get("dog_id") == f"DOG{index:03d}"
             for index, file_name in enumerate(current_manifest, start=1)
         ):
             print("Loading existing embedding database from PostgreSQL...")
@@ -231,7 +231,7 @@ def ensure_reference_database(reference_files: List[Path], processor, model, det
     dogs = []
     embeddings = generate_embeddings_for_images(reference_files, processor, model, detector, detector_transform)
     for index, image_path in enumerate(reference_files, start=1):
-        dog_id = f"DOG_{index:03d}"
+        dog_id = f"DOG{index:03d}"
         print(f"[{index:02d}/{len(reference_files)}] {image_path.name} -> {dog_id}")
         embedding = embeddings[index - 1]
         dogs.append(
@@ -345,7 +345,7 @@ def next_dog_id(current_db: Dict) -> str:
             continue
 
     next_number = max(existing_ids) + 1 if existing_ids else 1
-    return f"DOG_{next_number:03d}"
+    return f"DOG{next_number:03d}"
 
 
 def add_new_dog_to_database(current_db: Dict, image_path: Path, embedding: np.ndarray) -> str:

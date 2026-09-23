@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import { spawn } from 'child_process';
 import fs from 'fs';
 import http from 'http';
 import https from 'https';
@@ -21,6 +22,56 @@ try {
 }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
+const ML_SERVICE_DIR = path.join(PROJECT_ROOT, 'ml-service');
+let mlProcess = null;
+
+function startMlService() {
+  const enabled = String(process.env.AUTO_START_ML || 'true').toLowerCase() === 'true';
+  if (!enabled || process.env.ML_SERVICE_URL === '') return;
+
+  let mlUrl;
+  try {
+    mlUrl = new URL(process.env.ML_SERVICE_URL || 'http://localhost:8000');
+  } catch {
+    console.warn('⚠️ Invalid ML_SERVICE_URL; automatic ML startup is disabled.');
+    return;
+  }
+
+  if (!['localhost', '127.0.0.1', '::1'].includes(mlUrl.hostname)) {
+    console.log(`Using external ML service at ${mlUrl.origin}; automatic local startup skipped.`);
+    return;
+  }
+
+  const pythonCommand = process.env.ML_PYTHON_BIN || (process.platform === 'win32' ? 'python' : 'python3');
+  const mlPort = process.env.ML_SERVICE_PORT || mlUrl.port || '8000';
+  mlProcess = spawn(
+    pythonCommand,
+    ['-m', 'uvicorn', 'app.main:app', '--host', '0.0.0.0', '--port', String(mlPort)],
+    {
+      cwd: ML_SERVICE_DIR,
+      env: { ...process.env, PYTHONPATH: ML_SERVICE_DIR },
+      stdio: 'inherit'
+    }
+  );
+
+  mlProcess.on('error', (error) => {
+    console.warn(`⚠️ Could not start the Python ML service: ${error.message}`);
+  });
+  mlProcess.on('exit', (code, signal) => {
+    if (mlProcess) {
+      console.warn(`⚠️ Python ML service stopped${signal ? ` (${signal})` : ` with code ${code}`}.`);
+      mlProcess = null;
+    }
+  });
+  console.log(`Starting Python ML service on ${mlUrl.hostname}:${mlPort}...`);
+}
+
+function stopMlService() {
+  if (!mlProcess || mlProcess.killed) return;
+  mlProcess.kill();
+  mlProcess = null;
+}
 
 const app = express();
 const REQUESTED_PORT = Number(process.env.PORT) || 5000;
@@ -129,6 +180,7 @@ function removeLockFile() {
  * Startup with automatic fallback ports
  * ---------------------------------------------------------------------- */
 checkForDuplicateInstance();
+startMlService();
 
 function startServer(port, attempt = 0) {
   const sslKeyPath = process.env.HTTPS_KEY_PATH;
@@ -189,10 +241,15 @@ function startServer(port, attempt = 0) {
   // see a stale "duplicate instance" record.
   const shutdown = () => {
     removeLockFile();
+    stopMlService();
     server.close(() => process.exit(0));
   };
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);
+  process.once('SIGUSR2', () => {
+    stopMlService();
+    process.kill(process.pid, 'SIGTERM');
+  });
   process.on('exit', removeLockFile);
 }
 

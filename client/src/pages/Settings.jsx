@@ -14,21 +14,15 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Alert,
-  Chip
+  Alert
 } from '@mui/material';
 import SettingsRounded from '@mui/icons-material/SettingsRounded';
-import DarkModeRounded from '@mui/icons-material/DarkModeRounded';
-import NotificationsRounded from '@mui/icons-material/NotificationsRounded';
-import AutoAwesomeRounded from '@mui/icons-material/AutoAwesomeRounded';
 import { useThemeMode } from '../context/ThemeModeContext';
-import { useAuth } from '../context/AuthContext';
 
 const STORAGE_KEY = 'stray-dog-settings';
 
 export default function Settings() {
   const { mode, toggleMode } = useThemeMode();
-  const { currentUser } = useAuth();
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [compactMode, setCompactMode] = useState(false);
@@ -57,7 +51,7 @@ export default function Settings() {
       </Alert>
 
       <Grid container spacing={3}>
-        <Grid item xs={12} md={7}>
+        <Grid item xs={12}>
           <Card>
             <CardHeader
               title="Application Preferences"
@@ -123,43 +117,6 @@ export default function Settings() {
                     <MenuItem value={120}>2 minutes</MenuItem>
                   </Select>
                 </FormControl>
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} md={5}>
-          <Card>
-            <CardHeader
-              title="Monitoring Profile"
-              titleTypographyProps={{ fontWeight: 700 }}
-              avatar={<AutoAwesomeRounded color="secondary" />}
-            />
-            <Divider />
-            <CardContent>
-              <Stack spacing={2.5}>
-                <Box>
-                  <Typography variant="caption" color="text.secondary">
-                    Signed in as
-                  </Typography>
-                  <Typography variant="h6" fontWeight={700}>
-                    {currentUser?.displayName || 'Operator'}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {currentUser?.email || 'No email available'}
-                  </Typography>
-                </Box>
-
-                <Box>
-                  <Typography variant="caption" color="text.secondary">
-                    Current setup
-                  </Typography>
-                  <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
-                    <Chip icon={<DarkModeRounded />} label={mode === 'dark' ? 'Dark UI' : 'Light UI'} />
-                    <Chip icon={<NotificationsRounded />} label={notificationsEnabled ? 'Alerts on' : 'Alerts off'} />
-                    <Chip icon={<SettingsRounded />} label={compactMode ? 'Compact view' : 'Comfortable view'} />
-                  </Stack>
-                </Box>
               </Stack>
             </CardContent>
           </Card>

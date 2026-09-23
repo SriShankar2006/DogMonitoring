@@ -4,11 +4,15 @@
   "scripts": {
     "dev:client": "npm --prefix client run dev",
     "dev:server": "npm --prefix server run dev",
-    "dev:ml": "cd ml-service && py -3.13 -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload",
+    "dev:ml": "cd ml-service && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload",
+    "dev:all": "concurrently -k -n client,server,ml \"npm run dev:client\" \"npm run dev:server\" \"npm run dev:ml\"",
     "build": "npm --prefix client run build",
     "build:client": "npm --prefix client run build"
   },
   "dependencies": {
     "firebase": "^12.16.0"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5"
   }
 }

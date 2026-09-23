@@ -37,5 +37,15 @@ export async function initializePostgres() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
   `);
+  await pool.query(`
+    UPDATE dog_embeddings AS legacy
+    SET dog_id = regexp_replace(legacy.dog_id, '^DOG_', 'DOG')
+    WHERE legacy.dog_id ~ '^DOG_[0-9]+$'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM dog_embeddings AS canonical
+        WHERE canonical.dog_id = regexp_replace(legacy.dog_id, '^DOG_', 'DOG')
+      );
+  `);
   return true;
 }

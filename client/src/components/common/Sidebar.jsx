@@ -19,22 +19,23 @@ import UploadIcon from '@mui/icons-material/CloudUploadRounded';
 import SearchIcon from '@mui/icons-material/SearchRounded';
 import InsightsIcon from '@mui/icons-material/InsightsRounded';
 import PetsIcon from '@mui/icons-material/PetsRounded';
-import PersonIcon from '@mui/icons-material/PersonRounded';
 import SettingsIcon from '@mui/icons-material/SettingsRounded';
 
 export const DRAWER_WIDTH = 260;
 
-const NAV_ITEMS = [
+const USER_ITEMS = [
+  { label: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
+  { label: 'Upload', icon: <UploadIcon />, path: '/upload' },
+  { label: 'Search', icon: <SearchIcon />, path: '/search' },
+  { label: 'Settings', icon: <SettingsIcon />, path: '/settings' }
+];
+
+const ADMIN_ITEMS = [
   { label: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
   { label: 'Map', icon: <MapIcon />, path: '/map' },
   { label: 'Heatmap', icon: <WhatshotIcon />, path: '/heatmap' },
-  { label: 'Upload', icon: <UploadIcon />, path: '/upload' },
   { label: 'Search', icon: <SearchIcon />, path: '/search' },
-  { label: 'Statistics', icon: <InsightsIcon />, path: '/statistics' }
-];
-
-const SECONDARY_ITEMS = [
-  { label: 'Profile', icon: <PersonIcon />, path: '/profile' },
+  { label: 'Statistics', icon: <InsightsIcon />, path: '/statistics' },
   { label: 'Settings', icon: <SettingsIcon />, path: '/settings' }
 ];
 
@@ -42,6 +43,8 @@ export default function Sidebar({ mobileOpen, onClose, variant }) {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
+  const isAdminPage = sessionStorage.getItem('dog_admin_session') === 'true';
+  const NAV_ITEMS = isAdminPage ? ADMIN_ITEMS : USER_ITEMS;
 
   const content = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -52,7 +55,7 @@ export default function Sidebar({ mobileOpen, onClose, variant }) {
             Stray Dog AI
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            Detection & Monitoring
+            {isAdminPage ? 'Admin Mode' : 'Detection & Monitoring'}
           </Typography>
         </Box>
       </Toolbar>
@@ -77,26 +80,6 @@ export default function Sidebar({ mobileOpen, onClose, variant }) {
                   '& .MuiListItemIcon-root': { color: theme.palette.primary.contrastText }
                 }
               }}
-            >
-              <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.label} primaryTypographyProps={{ fontWeight: 600 }} />
-            </ListItemButton>
-          );
-        })}
-      </List>
-      <Divider />
-      <List sx={{ px: 2, py: 2 }}>
-        {SECONDARY_ITEMS.map((item) => {
-          const selected = location.pathname.startsWith(item.path);
-          return (
-            <ListItemButton
-              key={item.path}
-              selected={selected}
-              onClick={() => {
-                navigate(item.path);
-                if (variant === 'temporary') onClose();
-              }}
-              sx={{ borderRadius: 3, mb: 0.5 }}
             >
               <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
               <ListItemText primary={item.label} primaryTypographyProps={{ fontWeight: 600 }} />

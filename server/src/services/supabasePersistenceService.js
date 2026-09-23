@@ -558,20 +558,29 @@ export async function persistSightingRecords({
   // Preserve the original uploader on repeat sightings of the same dog -
   // ownership must never transfer to whoever uploads the next sighting.
   let ownerUid = uploadedBy || null;
+  let existingDog = null;
   if (!isNewDog) {
-    const { data: existingDog } = await supabase.from(DOGS_TABLE).select('uploaded_by').eq('dog_id', dogId).single();
+    const { data, error: existingDogError } = await supabase
+      .from(DOGS_TABLE)
+      .select('uploaded_by, first_detected, total_sightings')
+      .eq('dog_id', dogId)
+      .single();
+    if (existingDogError || !data) throw new ApiError(404, `Dog ${dogId} not found.`);
+    existingDog = data;
     ownerUid = existingDog?.uploaded_by || ownerUid;
   }
 
   const dogPayload = {
     dog_id: dogId,
     image_url: imageUrl,
-    first_detected: isNewDog ? capturedDate.toISOString() : null,
+    first_detected: isNewDog
+      ? capturedDate.toISOString()
+      : existingDog.first_detected || capturedDate.toISOString(),
     latest_detected: capturedDate.toISOString(),
     latest_latitude: latitude,
     latest_longitude: longitude,
     latest_address: address || null,
-    total_sightings: 1,
+    total_sightings: isNewDog ? 1 : (existingDog.total_sightings || 0) + 1,
     uploaded_by: ownerUid
   };
 
@@ -596,12 +605,6 @@ export async function persistSightingRecords({
 
   const { error: insertErr } = await supabase.from(SIGHTINGS_TABLE).insert(sightingPayload);
   if (insertErr) throw new ApiError(500, `DB error: ${insertErr.message}`);
-
-  // increment total_sightings if not new
-  if (!isNewDog) {
-    // simple increment using SQL fragment
-    await supabase.rpc('increment_counter', { table_name: DOGS_TABLE, key: 'dog_id', key_value: dogId }).catch(() => {});
-  }
 
   // Return dog record (fetch)
   const { data: dogData, error: dogErr } = await supabase.from(DOGS_TABLE).select('*').eq('dog_id', dogId).single();

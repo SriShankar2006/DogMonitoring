@@ -5,117 +5,149 @@ import {
   Toolbar,
   IconButton,
   Typography,
-  Box,
-  Avatar,
-  Menu,
-  MenuItem,
+  Button,
   Tooltip,
-  ListItemIcon,
-  Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
   useMediaQuery,
   useTheme
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/MenuRounded';
 import Brightness4Icon from '@mui/icons-material/Brightness4Rounded';
 import Brightness7Icon from '@mui/icons-material/Brightness7Rounded';
-import LogoutIcon from '@mui/icons-material/LogoutRounded';
+import LockRoundedIcon from '@mui/icons-material/LockRounded';
 import PersonIcon from '@mui/icons-material/PersonRounded';
-import SettingsIcon from '@mui/icons-material/SettingsRounded';
-import { useAuth } from '../../context/AuthContext';
 import { useThemeMode } from '../../context/ThemeModeContext';
 import { DRAWER_WIDTH } from './Sidebar';
+
+const ADMIN_API_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 export default function Header({ onMenuClick, title }) {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
-  const { currentUser, logout } = useAuth();
   const { mode, toggleMode } = useThemeMode();
   const navigate = useNavigate();
-  const [anchorEl, setAnchorEl] = useState(null);
+  const [adminDialogOpen, setAdminDialogOpen] = useState(false);
+  const [adminPassword, setAdminPassword] = useState('');
+  const [adminError, setAdminError] = useState('');
+  const isAdmin = sessionStorage.getItem('dog_admin_session') === 'true';
 
-  const handleLogout = async () => {
-    setAnchorEl(null);
-    await logout();
-    navigate('/login');
+  const handleUserClick = () => {
+    sessionStorage.removeItem('dog_admin_session');
+    navigate('/dashboard');
+  };
+
+  const handleAdminClick = () => {
+    setAdminError('');
+    setAdminDialogOpen(true);
+  };
+
+  const submitAdminPassword = async () => {
+    setAdminError('');
+
+    try {
+      const response = await fetch(`${ADMIN_API_URL}/admin/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: adminPassword })
+      });
+
+      const payload = await response.json();
+
+      if (!response.ok || !payload.success) {
+        setAdminError(payload.message || 'Invalid password.');
+        return;
+      }
+
+      sessionStorage.setItem('dog_admin_session', 'true');
+      setAdminPassword('');
+      setAdminDialogOpen(false);
+      navigate('/dashboard');
+    } catch (error) {
+      setAdminError(error.message || 'Unable to verify the admin password.');
+    }
   };
 
   return (
-    <AppBar
-      position="fixed"
-      color="inherit"
-      elevation={0}
-      sx={{
-        width: isDesktop ? `calc(100% - ${DRAWER_WIDTH}px)` : '100%',
-        ml: isDesktop ? `${DRAWER_WIDTH}px` : 0,
-        borderBottom: '1px solid',
-        borderColor: 'divider',
-        bgcolor: 'background.paper'
-      }}
-    >
-      <Toolbar sx={{ gap: 1 }}>
-        {!isDesktop && (
-          <IconButton edge="start" onClick={onMenuClick} aria-label="open navigation">
-            <MenuIcon />
-          </IconButton>
-        )}
-        <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 700 }} noWrap>
-          {title}
-        </Typography>
+    <>
+      <AppBar
+        position="fixed"
+        color="inherit"
+        elevation={0}
+        sx={{
+          width: isDesktop ? `calc(100% - ${DRAWER_WIDTH}px)` : '100%',
+          ml: isDesktop ? `${DRAWER_WIDTH}px` : 0,
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'background.paper'
+        }}
+      >
+        <Toolbar sx={{ gap: 1 }}>
+          {!isDesktop && (
+            <IconButton edge="start" onClick={onMenuClick} aria-label="open navigation">
+              <MenuIcon />
+            </IconButton>
+          )}
+          <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 700 }} noWrap>
+            {title}
+          </Typography>
 
-        <Tooltip title={mode === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}>
-          <IconButton onClick={toggleMode}>
-            {mode === 'light' ? <Brightness4Icon /> : <Brightness7Icon />}
-          </IconButton>
-        </Tooltip>
+          <Button
+            variant={isAdmin ? 'outlined' : 'contained'}
+            color="primary"
+            startIcon={<PersonIcon />}
+            onClick={handleUserClick}
+            sx={{ minWidth: 110, borderRadius: 999, textTransform: 'none', fontWeight: 700 }}
+          >
+            User
+          </Button>
 
-        <Tooltip title="Account">
-          <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ ml: 1 }}>
-            <Avatar sx={{ width: 34, height: 34, bgcolor: 'primary.main' }}>
-              {(currentUser?.displayName || currentUser?.email || '?')[0].toUpperCase()}
-            </Avatar>
-          </IconButton>
-        </Tooltip>
-        <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
-          <Box sx={{ px: 2, py: 1 }}>
-            <Typography variant="subtitle2" fontWeight={700}>
-              {currentUser?.displayName || 'User'}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {currentUser?.email}
-            </Typography>
-          </Box>
-          <Divider />
-          <MenuItem
-            onClick={() => {
-              setAnchorEl(null);
-              navigate('/profile');
-            }}
+          <Button
+            variant={isAdmin ? 'contained' : 'outlined'}
+            color="primary"
+            startIcon={<LockRoundedIcon />}
+            onClick={handleAdminClick}
+            sx={{ minWidth: 110, borderRadius: 999, textTransform: 'none', fontWeight: 700 }}
           >
-            <ListItemIcon>
-              <PersonIcon fontSize="small" />
-            </ListItemIcon>
-            Profile
-          </MenuItem>
-          <MenuItem
-            onClick={() => {
-              setAnchorEl(null);
-              navigate('/settings');
+            Admin
+          </Button>
+
+          <Tooltip title={mode === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}>
+            <IconButton onClick={toggleMode} aria-label="Toggle theme">
+              {mode === 'light' ? <Brightness4Icon /> : <Brightness7Icon />}
+            </IconButton>
+          </Tooltip>
+        </Toolbar>
+      </AppBar>
+
+      <Dialog open={adminDialogOpen} onClose={() => setAdminDialogOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Admin Login</DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            type="password"
+            label="Password"
+            value={adminPassword}
+            onChange={(event) => setAdminPassword(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                submitAdminPassword();
+              }
             }}
-          >
-            <ListItemIcon>
-              <SettingsIcon fontSize="small" />
-            </ListItemIcon>
-            Settings
-          </MenuItem>
-          <Divider />
-          <MenuItem onClick={handleLogout}>
-            <ListItemIcon>
-              <LogoutIcon fontSize="small" />
-            </ListItemIcon>
-            Logout
-          </MenuItem>
-        </Menu>
-      </Toolbar>
-    </AppBar>
+            margin="dense"
+            autoFocus
+            error={Boolean(adminError)}
+            helperText={adminError || 'Enter the admin password to continue.'}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAdminDialogOpen(false)}>Cancel</Button>
+          <Button variant="contained" onClick={submitAdminPassword}>Login</Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 }

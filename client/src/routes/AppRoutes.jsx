@@ -5,9 +5,6 @@ import ProtectedRoute from '../components/common/ProtectedRoute';
 import MainLayout from '../components/common/MainLayout';
 import ErrorBoundary from '../components/common/ErrorBoundary';
 
-import Login from '../pages/Login';
-import Register from '../pages/Register';
-import ForgotPassword from '../pages/ForgotPassword';
 import Dashboard from '../pages/Dashboard';
 import MapPage from '../pages/MapPage';
 import Heatmap from '../pages/Heatmap';
@@ -15,8 +12,9 @@ import Upload from '../pages/Upload';
 import Search from '../pages/Search';
 import DogDetails from '../pages/DogDetails';
 import Statistics from '../pages/Statistics';
-import Profile from '../pages/Profile';
 import Settings from '../pages/Settings';
+import Admin from '../pages/Admin';
+import AdminRoute from '../components/common/AdminRoute';
 import NotFound from '../pages/NotFound';
 
 function Protected({ title, children }) {
@@ -36,14 +34,11 @@ Protected.propTypes = {
 };
 
 export default function AppRoutes() {
+  const location = useLocation();
+
   return (
     <Routes>
-      {/* Public auth routes */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-
-      {/* Protected app routes */}
+      {/* Public app routes */}
       <Route
         path="/dashboard"
         element={
@@ -101,19 +96,23 @@ export default function AppRoutes() {
         }
       />
       <Route
-        path="/profile"
-        element={
-          <Protected title="Profile">
-            <Profile />
-          </Protected>
-        }
-      />
-      <Route
         path="/settings"
         element={
           <Protected title="Settings">
             <Settings />
           </Protected>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <MainLayout title="Admin Panel">
+              <ErrorBoundary resetKey={location.pathname}>
+                <Admin />
+              </ErrorBoundary>
+            </MainLayout>
+          </AdminRoute>
         }
       />
 

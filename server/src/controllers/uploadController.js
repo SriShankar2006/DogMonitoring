@@ -51,9 +51,13 @@ export const handleUpload = asyncHandler(async (req, res) => {
     imageHash: hashImageBuffer(req.file.buffer),
     capturedAt: finalCapturedAt
   });
-  if (['LIKELY_SAME', 'ALREADY_UPLOADED'].includes(reidResult.decision)) {
+  const matchedDogId = ['LIKELY_SAME', 'ALREADY_UPLOADED'].includes(reidResult.decision)
+    ? reidResult.matchedDogId
+    : null;
+
+  if (matchedDogId) {
     aiResult.isDuplicate = true;
-    aiResult.dogId = reidResult.matchedDogId;
+    aiResult.dogId = matchedDogId;
   }
 
   const { sightingId, dogId, isNewDog, isoDate, isoTime, capturedDate } = await recordSighting({
@@ -100,6 +104,7 @@ export const handleUpload = asyncHandler(async (req, res) => {
     isNewDog,
     isDuplicate: !isNewDog,
     isAlreadyUploaded: reidResult.decision === 'ALREADY_UPLOADED',
+    matchedDogId,
     confidence: aiResult.confidence,
     reidDecision: reidResult.decision,
     reidSimilarity: reidResult.topCandidate?.visual_score ?? null,

@@ -13,6 +13,10 @@ const RADIUS_METERS = Number(process.env.REID_RADIUS_METERS ?? 100);
 const MATCH_THRESHOLD = Number(process.env.REID_MATCH_THRESHOLD ?? 0.75);
 const AMBIGUOUS_MARGIN = Number(process.env.REID_AMBIGUOUS_MARGIN ?? 0.05);
 
+function canonicalDogId(dogId) {
+  return typeof dogId === 'string' ? dogId.replace(/^DOG_(\d+)$/, 'DOG$1') : dogId;
+}
+
 function normalizeValue(value, min, max) {
   if (!Number.isFinite(value)) return 0;
   if (max <= min) return 0;
@@ -71,7 +75,7 @@ export async function scoreReidCandidates({ latitude, longitude, embedding, imag
   if (exactImage) {
     return {
       decision: 'ALREADY_UPLOADED',
-      matchedDogId: exactImage.dog_id,
+      matchedDogId: canonicalDogId(exactImage.dog_id),
       matchedSightingId: null,
       topCandidate: { ...exactImage, visual_score: 1, combined_score: 1 },
       scoredCandidates: []
@@ -137,7 +141,7 @@ export async function scoreReidCandidates({ latitude, longitude, embedding, imag
 
   return {
     decision: 'LIKELY_SAME',
-    matchedDogId: top.dog_id,
+    matchedDogId: canonicalDogId(top.dog_id),
     matchedSightingId: top.sighting_id,
     topCandidate: top,
     scoredCandidates: scored

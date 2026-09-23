@@ -1,7 +1,8 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Box, Typography, Button, IconButton } from '@mui/material';
+import { Box, Typography, Button, IconButton, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import CloudUploadRounded from '@mui/icons-material/CloudUploadRounded';
+import CameraAltRounded from '@mui/icons-material/CameraAltRounded';
 import CloseRounded from '@mui/icons-material/CloseRounded';
 import ImageRounded from '@mui/icons-material/ImageRounded';
 import { validateImageFile } from '../../utils/validators';
@@ -10,6 +11,24 @@ export default function DropzoneUpload({ onFileSelected, disabled }) {
   const [preview, setPreview] = useState(null);
   const [fileName, setFileName] = useState('');
   const [error, setError] = useState('');
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const cameraInputRef = useRef(null);
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+
+  const processFile = useCallback((file) => {
+    setError('');
+    if (!file) return;
+
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+    setPreview(URL.createObjectURL(file));
+    setFileName(file.name || 'Camera photo');
+    onFileSelected(file);
+  }, [onFileSelected]);
 
   const onDrop = useCallback(
     (acceptedFiles, rejectedFiles) => {
@@ -20,16 +39,9 @@ export default function DropzoneUpload({ onFileSelected, disabled }) {
       }
       const file = acceptedFiles[0];
       if (!file) return;
-      const validationError = validateImageFile(file);
-      if (validationError) {
-        setError(validationError);
-        return;
-      }
-      setPreview(URL.createObjectURL(file));
-      setFileName(file.name);
-      onFileSelected(file);
+      processFile(file);
     },
-    [onFileSelected]
+    [processFile]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -44,6 +56,62 @@ export default function DropzoneUpload({ onFileSelected, disabled }) {
     setPreview(null);
     setFileName('');
     onFileSelected(null);
+  };
+
+  const handleCameraChange = (event) => {
+    processFile(event.target.files?.[0]);
+    event.target.value = '';
+  };
+
+  useEffect(() => {
+    if (cameraOpen && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+    }
+  }, [cameraOpen]);
+
+  useEffect(() => () => {
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+  }, []);
+
+  const closeCamera = () => {
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+    setCameraOpen(false);
+  };
+
+  const openCamera = async (event) => {
+    event.stopPropagation();
+    setError('');
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      cameraInputRef.current?.click();
+      return;
+    }
+
+    try {
+      streamRef.current = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' } },
+        audio: false
+      });
+      setCameraOpen(true);
+    } catch {
+      setError('Camera access was blocked. Please allow camera permission or use Browse Files.');
+    }
+  };
+
+  const takePhoto = () => {
+    const video = videoRef.current;
+    if (!video?.videoWidth || !video.videoHeight) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      processFile(new File([blob], `dog-photo-${Date.now()}.jpg`, { type: 'image/jpeg' }));
+      closeCamera();
+    }, 'image/jpeg', 0.92);
   };
 
   return (
@@ -108,9 +176,50 @@ export default function DropzoneUpload({ onFileSelected, disabled }) {
             <Button variant="outlined" component="span" disabled={disabled}>
               Browse Files
             </Button>
+            <Button
+              variant="text"
+              startIcon={<CameraAltRounded />}
+              disabled={disabled}
+              onClick={(event) => {
+                openCamera(event);
+              }}
+              sx={{ mt: 1 }}
+            >
+              Use Camera
+            </Button>
           </>
         )}
       </Box>
+
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/jpeg,image/png"
+        capture="environment"
+        onChange={handleCameraChange}
+        disabled={disabled}
+        style={{ display: 'none' }}
+      />
+
+      <Dialog open={cameraOpen} onClose={closeCamera} maxWidth="sm" fullWidth>
+        <DialogTitle>Take a dog photo</DialogTitle>
+        <DialogContent>
+          <Box
+            component="video"
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            sx={{ display: 'block', width: '100%', maxHeight: '60vh', objectFit: 'contain', bgcolor: 'common.black', borderRadius: 2 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeCamera}>Cancel</Button>
+          <Button variant="contained" startIcon={<CameraAltRounded />} onClick={takePhoto}>
+            Take Photo
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {error && (
         <Typography variant="caption" color="error" sx={{ display: 'block', mt: 1 }}>

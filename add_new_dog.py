@@ -17,7 +17,7 @@ def next_dog_id(dogs: list[dict]) -> str:
             numbers.append(int(str(dog.get("dog_id", "")).split("_")[-1]))
         except ValueError:
             continue
-    return f"DOG_{max(numbers, default=0) + 1:03d}"
+    return f"DOG{max(numbers, default=0) + 1:03d}"
 
 
 def main() -> int:

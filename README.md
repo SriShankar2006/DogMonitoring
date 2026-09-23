@@ -55,6 +55,16 @@ npm run dev:server
 npm run dev:client
 ```
 
+To start the client, Node API, and Python ML service together:
+
+```bash
+npm run dev:all
+```
+
+The ML service loads its detector, embedder, and health model automatically at startup.
+Run `python enroll_dogs.py` once after adding reference images so re-identification has
+known dogs to compare against.
+
 ### 1. Backend Setup
 
 ```bash

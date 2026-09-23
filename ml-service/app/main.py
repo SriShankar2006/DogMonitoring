@@ -4,12 +4,20 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
 
 from app.config import settings
-from app.detection.detector import get_detector
+from app.detection.detector import crop_detected_dog, get_detector
 from app.embedding.embedder import get_embedder
 from app.health.screener import get_screener
 from app.schemas import DetectResponse, EmbedResponse, HealthScreenResponse
 
 app = FastAPI(title=settings.app_name)
+
+
+@app.on_event('startup')
+async def load_models() -> None:
+    """Load every model once when the ML service starts."""
+    get_detector()
+    get_screener()
+    get_embedder()
 
 
 @app.get('/health')
@@ -38,6 +46,9 @@ async def detect(image: UploadFile = File(...)) -> DetectResponse:
 async def embed(image: UploadFile = File(...)) -> EmbedResponse:
     try:
         contents = await image.read()
+        detection_result = get_detector().detect(contents, image.filename or 'upload.jpg')
+        crop = detection_result.get('dogs', [None])[0]
+        contents = crop_detected_dog(contents, crop)
         embedder = get_embedder()
         result = embedder.embed(contents, image.filename or 'crop.jpg')
         return EmbedResponse(
